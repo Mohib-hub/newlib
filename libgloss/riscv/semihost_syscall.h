@@ -16,7 +16,8 @@ __semihost_syscall(long id, long *data_block)
     ".balign 16             \n"
     "slli zero, zero, 0x1f  \n"
     "ebreak                 \n"
-    "srai zero, zero, 0x7" : "+r"(a0) : "r"(a1));
+    "srai zero, zero, 0x7     "
+      : "+r"(a0) : "r"(a1) : "memory");
 
   return a0;
 }

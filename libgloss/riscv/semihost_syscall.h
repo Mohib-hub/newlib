@@ -12,11 +12,13 @@ __semihost_syscall(long id, long *data_block)
   /* RISC-V semihosting trap sequence.  Must be uncompressed and must not
      cross page boundary.  */
   asm volatile (
+    ".option push           \n"
     ".option norvc          \n"
     ".balign 16             \n"
     "slli zero, zero, 0x1f  \n"
     "ebreak                 \n"
-    "srai zero, zero, 0x7     "
+    "srai zero, zero, 0x7   \n"
+    ".option pop            \n"
       : "+r"(a0) : "r"(a1) : "memory");
 
   return a0;

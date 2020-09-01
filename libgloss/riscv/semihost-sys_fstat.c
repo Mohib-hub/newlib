@@ -10,10 +10,6 @@ _fstat(int file, struct stat *st)
 {
   /* Initialize st as not all fields will be set.  */
   memset (st, 0, sizeof (*st));
-  if (file == STDIN_FILENO || file == STDOUT_FILENO || file == STDERR_FILENO)
-    {
-      st->st_mode = S_IFCHR;
-      return 0;
-    }
+
   return _stat_common (file, st);
 }

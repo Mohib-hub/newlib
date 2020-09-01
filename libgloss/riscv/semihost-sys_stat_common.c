@@ -1,5 +1,7 @@
 #include <machine/syscall.h>
-#include "semihost_stat.h"
+#include "semihost_syscall.h"
+#include <sys/stat.h>
+#include "semihost_fdtable.h"
 
 /* Used by _fstat and _stat to fill in some common details.  */
 

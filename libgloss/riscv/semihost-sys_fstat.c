@@ -1,5 +1,5 @@
 #include <string.h>
-#include <unistd.h>
+#include <sys/stat.h>
 #include "semihost_stat.h"
 
 /* Status of an open file. The sys/stat.h header file required is

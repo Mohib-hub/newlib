@@ -1,5 +1,4 @@
 #include <machine/syscall.h>
-#include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
 #include "semihost_stat.h"

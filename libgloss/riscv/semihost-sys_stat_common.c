@@ -9,7 +9,13 @@ int
 _stat_common (int file, struct stat *st)
 {
   int flen;
-  long data_block[] = {file};
+  struct fdentry *fd = _get_fdentry (file);
+  long data_block[1];
+
+  if (fd == NULL)
+    return -1;
+
+  data_block[0] = fd->handle;
 
   /* Assume character device and default block size of 4096.  */
   st->st_mode |= S_IFCHR;

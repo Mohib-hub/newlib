@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "semihost_syscall.h"
+#include "semihost_fdtable.h"
 
 extern int errno;
 
@@ -10,28 +11,40 @@ extern int errno;
 off_t
 _lseek(int file, off_t offset, int dir)
 {
-  long data_block[] = {file, 0};
+  long data_block[2];
   long flen;
   long res;
+  struct fdentry *fd;
   off_t abs_pos;
 
-  if (file == STDOUT_FILENO || file == STDERR_FILENO || file == STDIN_FILENO)
-    return 0;
+  fd = _get_fdentry (file);
+  if (fd == NULL)
+    {
+      errno = EBADF;
+      return -1;
+    }
 
-  flen = syscall_errno (SEMIHOST_flen, data_block);
+  if (dir == SEEK_CUR && offset == 0)
+    return fd->pos;
+
+  data_block[0] = fd->handle;
 
   switch (dir)
     {
       case SEEK_SET:
         abs_pos = offset;
         break;
+      case SEEK_CUR:
+        abs_pos = fd->pos + offset;
+        break;
       case SEEK_END:
+        data_block[1] = 0;
+        flen = syscall_errno (SEMIHOST_flen, data_block);
+        if (flen == -1)
+          return -1;
         abs_pos = flen + offset;
         break;
       default:
-        /* The semihosting seek syscall only works with absolute values.  The
-           current position of each open file would need to be tracked to
-           support SEEK_CUR.  */
         errno = EINVAL;
         return -1;
     }
@@ -45,6 +58,9 @@ _lseek(int file, off_t offset, int dir)
   data_block[1] = abs_pos;
   res = syscall_errno (SEMIHOST_seek, data_block);
   if (res == 0)
-    return abs_pos;
+    {
+      fd->pos = abs_pos;
+      return abs_pos;
+    }
   return res;
 }

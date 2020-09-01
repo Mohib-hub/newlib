@@ -1,5 +1,6 @@
 #include <machine/syscall.h>
 #include "semihost_syscall.h"
+#include "semihost_fdtable.h"
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
@@ -17,8 +18,11 @@ extern int errno;
 int
 _open(const char *name, int flags, ...)
 {
-  /* Work out mode from flags.  */
+  int fh;
   int mode;
+  long data_block[3];
+
+  /* Work out mode from flags.  */
   if ((flags & (O_RDONLY | O_WRONLY | O_RDWR)) == O_RDONLY)
     mode = SEMIHOST_MODE_R;
   else if ((flags & (O_WRONLY | O_CREAT | O_TRUNC))
@@ -41,6 +45,14 @@ _open(const char *name, int flags, ...)
       return -1;
     }
 
-  long data_block[] = {(long) name, mode, strlen(name)};
-  return syscall_errno (SEMIHOST_open, data_block);
+  data_block[0] = (long) name;
+  data_block[1] = mode;
+  data_block[2] = strlen(name);
+  fh = syscall_errno (SEMIHOST_open, data_block);
+  /* Failed to open file.  */
+  if (fh == -1)
+    return -1;
+
+  /* Register the file in the fdtable.  */
+  return _register_fd (fh);
 }

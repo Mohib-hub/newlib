@@ -1,14 +1,28 @@
 #include <machine/syscall.h>
 #include <sys/types.h>
 #include "semihost_syscall.h"
+#include "semihost_fdtable.h"
 
 /* Write to a file.  */
 ssize_t
 _write(int file, const void *ptr, size_t len)
 {
-  long data_block[] = {file, (long) ptr, len};
-  long bytes_not_written = syscall_errno (SEMIHOST_write, data_block);
-  if (bytes_not_written >= 0)
-    return len - bytes_not_written;
+  struct fdentry *fd = _get_fdentry (file);
+  long data_block[3];
+  long res;
+
+  if (fd == NULL)
+    return -1;
+
+  data_block[0] = fd->handle;
+  data_block[1] = (long) ptr;
+  data_block[2] = len;
+  res = syscall_errno (SEMIHOST_write, data_block);
+  if (res >= 0)
+    {
+      ssize_t bytes_written = len - res;
+      fd->pos += bytes_written;
+      return bytes_written;
+    }
   return -1;
 }
